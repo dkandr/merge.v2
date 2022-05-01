@@ -9,6 +9,7 @@ using namespace std;
 using namespace std::chrono;
 
 bool make_thread = true;
+// bool make_thread = false;
 
 RequestHandler pool;
 	
@@ -52,14 +53,11 @@ void merge(std::shared_ptr<std::promise<void>> spPromise, int* arr, int l, int m
 }
 
 void mergeSort(int* arr, int l, int r) {
-
-	std::promise<void> p;
-
-	std::shared_ptr<std::promise<void>> spPromise = std::make_shared<std::promise<void>>(p);
-	std::future<void> f = p.get_future();
+	std::shared_ptr<std::promise<void>> spPromise(new std::promise<void>);
+	std::future<void> f = spPromise->get_future();
 
 	if (l >= r) {
-		// p.set_value();
+		// spPromise->set_value();
 		return;
 	}
 
@@ -67,14 +65,14 @@ void mergeSort(int* arr, int l, int r) {
 
 	mergeSort(arr, l, m);
 	mergeSort(arr, m + 1, r);
-
-	if (make_thread && (m - l > 100000)) {
+	
+	if (make_thread && (m - l > 10000)) {
 		pool.pushRequest(merge, spPromise, arr, l, m, r);
 	} else {
 		merge(spPromise, arr, l, m, r);
 	}
-
-	f.get();
+	
+	f.wait();
 }
 
 void showArray(int* array, int size) {
@@ -97,16 +95,12 @@ void checkSort(int* array, int size) {
 
 int main() {
 	srand(time(NULL));
-	int arr_size = 1000000;                    
-	// int arr_size = 600000;
+	int arr_size = 1000000;
 	int* array = new int[arr_size];
 
 	for (long i = 0; i < arr_size; i++) {
 		array[i] = rand() % 90 + 10;
 	}
-
-	std::shared_ptr<std::promise<void>> spPromise = std::make_shared<std::promise<void>>();
-	std::future<void> f = spPromise->get_future();
 
     auto begin = system_clock::now();
 

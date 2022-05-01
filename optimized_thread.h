@@ -8,7 +8,7 @@
 #include <queue>
 
 typedef std::function<void()> task_type;
-typedef void (*FuncType) ( std::shared_ptr<std::promise<void>>, int*, int, int, int);
+typedef void (*FuncType) (std::shared_ptr<std::promise<void>>, int*, int, int, int);
 
 template<class T>
 class BlockedQueue {
