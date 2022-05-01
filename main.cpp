@@ -57,7 +57,7 @@ void mergeSort(int* arr, int l, int r) {
 	std::future<void> f = spPromise->get_future();
 
 	if (l >= r) {
-		// spPromise->set_value();
+		spPromise->set_value();
 		return;
 	}
 
@@ -66,7 +66,7 @@ void mergeSort(int* arr, int l, int r) {
 	mergeSort(arr, l, m);
 	mergeSort(arr, m + 1, r);
 	
-	if (make_thread && (m - l > 10000)) {
+	if (make_thread && (m - l > 100000)) {
 		pool.pushRequest(merge, spPromise, arr, l, m, r);
 	} else {
 		merge(spPromise, arr, l, m, r);
