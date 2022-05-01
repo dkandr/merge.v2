@@ -57,7 +57,6 @@ void mergeSort(int* arr, int l, int r) {
 	std::future<void> f = spPromise->get_future();
 
 	if (l >= r) {
-		spPromise->set_value();
 		return;
 	}
 
