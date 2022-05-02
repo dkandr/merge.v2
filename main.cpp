@@ -108,7 +108,7 @@ int main() {
 
     auto begin = system_clock::now();
 
-	mergeSort(false, array, 0, arr_size - 1);
+	mergeSort(true, array, 0, arr_size - 1);
 
     auto end = system_clock::now();
 
