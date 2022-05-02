@@ -9,7 +9,6 @@ using namespace std;
 using namespace std::chrono;
 
 bool make_thread = true;
-// bool make_thread = false;
 
 RequestHandler pool;
 	
@@ -70,13 +69,12 @@ void mergeSort(bool addToPool, int* arr, int l, int r) {
 
 	if(addToPool && make_thread && (m - l > 10000)) {
 		pool.pushRequest(merge, spPromise, arr, l, m, r);
+		f.wait();
 	} else {
 		merge(nullptr, arr, l, m, r);
 	}
-
-	if (spPromise.use_count() > 1) {
-		f.wait();
-	}
+	
+	// f.wait();
 }
 
 void showArray(int* array, int size) {
@@ -108,7 +106,7 @@ int main() {
 
     auto begin = system_clock::now();
 
-	mergeSort(false, array, 0, arr_size - 1);
+	mergeSort(true, array, 0, arr_size - 1);
 
     auto end = system_clock::now();
 
