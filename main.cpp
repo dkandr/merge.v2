@@ -56,9 +56,6 @@ void merge(std::shared_ptr<std::promise<void>> spPromise, int* arr, int l, int m
 }
 
 void mergeSort(bool addToPool, int* arr, int l, int r) {
-	std::shared_ptr<std::promise<void>> spPromise(new std::promise<void>);
-	std::future<void> f = spPromise->get_future();
-
 	if (l >= r) {
 		return;
 	}
@@ -67,6 +64,9 @@ void mergeSort(bool addToPool, int* arr, int l, int r) {
 
 	mergeSort(true, arr, l, m);
 	mergeSort(false, arr, m + 1, r);
+
+	std::shared_ptr<std::promise<void>> spPromise(new std::promise<void>);
+	std::future<void> f = spPromise->get_future();
 
 	if(addToPool && make_thread && (m - l > 10000)) {
 		pool.pushRequest(merge, spPromise, arr, l, m, r);
