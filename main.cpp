@@ -9,6 +9,7 @@ using namespace std;
 using namespace std::chrono;
 
 bool make_thread = true;
+// bool make_thread = false;
 
 RequestHandler pool;
 	
@@ -49,32 +50,34 @@ void merge(std::shared_ptr<std::promise<void>> spPromise, int* arr, int l, int m
 		spPromise->set_value();
 	}
 
-
 	delete[] left;
 	delete[] right;
 }
 
-void mergeSort(bool addToPool, int* arr, int l, int r) {
+void mergeSort(std::shared_ptr<std::promise<void>> spPromiseParent, bool addToPool, int* arr, int l, int r) {
 	if (l >= r) {
 		return;
 	}
 
 	long m = (l + r - 1) / 2;
 
-	mergeSort(true, arr, l, m);
-	mergeSort(false, arr, m + 1, r);
-
 	std::shared_ptr<std::promise<void>> spPromise(new std::promise<void>);
-	std::future<void> f = spPromise->get_future();
+
+	mergeSort(spPromise, true, arr, l, m);
+	mergeSort(spPromise, false, arr, m + 1, r);
+
+	std::future<void> f;
 
 	if(addToPool && make_thread && (m - l > 10000)) {
-		pool.pushRequest(merge, spPromise, arr, l, m, r);
-		f.wait();
+		f = spPromiseParent->get_future();
+		pool.pushRequest(merge, spPromiseParent, arr, l, m, r);
 	} else {
 		merge(nullptr, arr, l, m, r);
 	}
-	
-	// f.wait();
+
+	if (spPromiseParent.use_count() > 2) {
+		f.wait();
+	}
 }
 
 void showArray(int* array, int size) {
@@ -106,7 +109,9 @@ int main() {
 
     auto begin = system_clock::now();
 
-	mergeSort(true, array, 0, arr_size - 1);
+	std::shared_ptr<std::promise<void>> spPromise(new std::promise<void>);
+
+	mergeSort(spPromise, true, array, 0, arr_size - 1);
 
     auto end = system_clock::now();
 
