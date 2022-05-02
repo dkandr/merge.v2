@@ -69,13 +69,17 @@ void mergeSort(bool addToPool, int* arr, int l, int r) {
 	std::future<void> f = spPromise->get_future();
 
 	if(addToPool && make_thread && (m - l > 10000)) {
+		if (spPromise.use_count() > 1) {
+			f.wait();
+		}
+
 		pool.pushRequest(merge, spPromise, arr, l, m, r);
 	} else {
 		merge(nullptr, arr, l, m, r);
-	}
 
-	if (spPromise.use_count() > 1) {
-		f.wait();
+		if (spPromise.use_count() > 1) {
+			f.wait();
+		}
 	}
 }
 
@@ -108,7 +112,7 @@ int main() {
 
     auto begin = system_clock::now();
 
-	mergeSort(true, array, 0, arr_size - 1);
+	mergeSort(false, array, 0, arr_size - 1);
 
     auto end = system_clock::now();
 
