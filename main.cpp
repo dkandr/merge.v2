@@ -46,13 +46,16 @@ void merge(std::shared_ptr<std::promise<void>> spPromise, int* arr, int l, int m
 		arr[k++] = right[j++];
 	}
 
-	spPromise->set_value();
+	if (spPromise) {
+		spPromise->set_value();
+	}
+
 
 	delete[] left;
 	delete[] right;
 }
 
-void mergeSort(int* arr, int l, int r) {
+void mergeSort(bool addToPool, int* arr, int l, int r) {
 	std::shared_ptr<std::promise<void>> spPromise(new std::promise<void>);
 	std::future<void> f = spPromise->get_future();
 
@@ -62,16 +65,18 @@ void mergeSort(int* arr, int l, int r) {
 
 	long m = (l + r - 1) / 2;
 
-	mergeSort(arr, l, m);
-	mergeSort(arr, m + 1, r);
-	
-	if (make_thread && (m - l > 100000)) {
+	mergeSort(true, arr, l, m);
+	mergeSort(false, arr, m + 1, r);
+
+	if(addToPool && make_thread && (m - l > 10000)) {
 		pool.pushRequest(merge, spPromise, arr, l, m, r);
 	} else {
-		merge(spPromise, arr, l, m, r);
+		merge(nullptr, arr, l, m, r);
 	}
-	
-	f.wait();
+
+	if (spPromise.use_count() > 1) {
+		f.wait();
+	}
 }
 
 void showArray(int* array, int size) {
@@ -94,7 +99,7 @@ void checkSort(int* array, int size) {
 
 int main() {
 	srand(time(NULL));
-	int arr_size = 1000000;
+	int arr_size = 10000000;
 	int* array = new int[arr_size];
 
 	for (long i = 0; i < arr_size; i++) {
@@ -103,7 +108,7 @@ int main() {
 
     auto begin = system_clock::now();
 
-	mergeSort(array, 0, arr_size - 1);
+	mergeSort(false, array, 0, arr_size - 1);
 
     auto end = system_clock::now();
 

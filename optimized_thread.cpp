@@ -1,7 +1,7 @@
 #include "optimized_thread.h"
 
 OptimizeThreadPool::OptimizeThreadPool():
-    m_thread_count(std::thread::hardware_concurrency() != 0 ? std::thread::hardware_concurrency() : 4),
+    m_thread_count(std::thread::hardware_concurrency() != 0 ? std::thread::hardware_concurrency() - 1 : 3), // + main thread
     m_thread_queues(m_thread_count) {
 }
 
@@ -51,7 +51,7 @@ void OptimizeThreadPool::stop() {
     }
 }
 
-void OptimizeThreadPool::push_task(FuncType f, std::shared_ptr<std::promise<void>>  spPromise, int *arr, int l, int m, int r) {
+void OptimizeThreadPool::push_task(FuncType f, std::shared_ptr<std::promise<void>> spPromise, int *arr, int l, int m, int r) {
     // вычисляем индекс очереди, куда положим задачу
     int queue_to_push = m_index++ % m_thread_count;
     // формируем функтор
