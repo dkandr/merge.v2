@@ -12,71 +12,56 @@ bool make_thread = true;
 // bool make_thread = false;
 
 RequestHandler pool;
-	
-void merge(std::shared_ptr<std::promise<void>> spPromise, int* arr, int l, int m, int r) {
-	int nl = m - l + 1;
-	int nr = r - m;
 
-	int* left = new int[nl];
-	int* right = new int[nr];
 
-	for (int i = 0; i < nl; i++)
-		left[i] = arr[l + i];
-	for (int j = 0; j < nr; j++)
-		right[j] = arr[m + 1 + j];
-
-	long i = 0, j = 0;
-	long k = l;
-
-	while (i < nl && j < nr) {
-		if (left[i] <= right[j]) {
-			arr[k] = left[i];
-			i++;
+void quicksort(std::shared_ptr<std::promise<void>> spPromiseParent, int *array, int left, int right) {
+	if(left >= right) {
+		if (spPromiseParent != nullptr) {
+			spPromiseParent->set_value();
 		}
-		else {
-			arr[k] = right[j];
-			j++;
-		}
-		k++;
-	}
-	while (i < nl) 	{
-		arr[k++] = left[i++];
-	}
-	while (j < nr) 	{
-		arr[k++] = right[j++];
-	}
-
-	if (spPromise) {
-		spPromise->set_value();
-	}
-
-	delete[] left;
-	delete[] right;
-}
-
-void mergeSort(std::shared_ptr<std::promise<void>> spPromiseParent, bool addToPool, int* arr, int l, int r) {
-	if (l >= r) {
 		return;
 	}
 
-	long m = (l + r - 1) / 2;
+	int left_bound = left;
+	int right_bound = right;
 
-	std::shared_ptr<std::promise<void>> spPromise(new std::promise<void>);
+	int middle = array[(left_bound + right_bound) / 2];
 
-	mergeSort(spPromise, true, arr, l, m);
-	mergeSort(spPromise, false, arr, m + 1, r);
+	do {
+		while(array[left_bound] < middle) {
+			left_bound++;
+		}
+		while(array[right_bound] > middle) {
+			right_bound--;
+		}
 
-	std::future<void> f;
+		//Меняем элементы местами
+		if (left_bound <= right_bound) {
+			std::swap(array[left_bound], array[right_bound]);
+			left_bound++;
+			right_bound--;
+		}
+	} while (left_bound <= right_bound);
 
-	if(addToPool && make_thread && (m - l > 10000)) {
-		f = spPromiseParent->get_future();
-		pool.pushRequest(merge, spPromiseParent, arr, l, m, r);
-	} else {
-		merge(nullptr, arr, l, m, r);
+	if (spPromiseParent != nullptr) {
+		spPromiseParent->set_value();
 	}
 
-	if (spPromiseParent.use_count() > 2) {
-		f.wait();
+	if(make_thread && (right_bound - left > 10000))
+	{
+		// std::shared_ptr<std::promise<void>> spPromise(new std::promise<void>);
+		// std::future<void> f = spPromise->get_future();
+
+		if (spPromiseParent != nullptr) {
+			pool.pushRequest(quicksort, nullptr, array, left, right_bound);
+		} else {
+			quicksort(nullptr, array, left, right_bound);	
+		}
+		quicksort(nullptr, array, left_bound, right);
+	} else {
+		// запускаем обе части синхронно
+		quicksort(nullptr, array, left, right_bound);
+		quicksort(nullptr, array, left_bound, right);
 	}
 }
 
@@ -110,8 +95,11 @@ int main() {
     auto begin = system_clock::now();
 
 	std::shared_ptr<std::promise<void>> spPromise(new std::promise<void>);
+	std::future<void> f = spPromise->get_future();
 
-	mergeSort(spPromise, true, array, 0, arr_size - 1);
+	quicksort(spPromise, array, 0, arr_size - 1);
+
+	f.wait();
 
     auto end = system_clock::now();
 

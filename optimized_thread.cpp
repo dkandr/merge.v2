@@ -51,11 +51,11 @@ void OptimizeThreadPool::stop() {
     }
 }
 
-void OptimizeThreadPool::push_task(FuncType f, std::shared_ptr<std::promise<void>> spPromise, int *arr, int l, int m, int r) {
+void OptimizeThreadPool::push_task(FuncType f, std::shared_ptr<std::promise<void>> spPromise,  int *array, int left_bound, int right) {
     // вычисляем индекс очереди, куда положим задачу
     int queue_to_push = m_index++ % m_thread_count;
     // формируем функтор
-    task_type task = [=]{f(spPromise, arr, l, m, r);};
+    task_type task = [=]{f(spPromise, array, left_bound, right);};
     // кладем в очередь
     m_thread_queues[queue_to_push].push(task);
 }
@@ -66,6 +66,6 @@ RequestHandler::RequestHandler() {
 RequestHandler::~RequestHandler() {
     m_tpool.stop();
 }
-void RequestHandler::pushRequest(FuncType f, std::shared_ptr<std::promise<void>> spPromise, int *arr, int l, int m, int r) {
-    m_tpool.push_task(f, spPromise, arr, l, m, r);
+void RequestHandler::pushRequest(FuncType f, std::shared_ptr<std::promise<void>> spPromise,  int *array, int left_bound, int right) {
+    m_tpool.push_task(f, spPromise, array, left_bound, right);
 }

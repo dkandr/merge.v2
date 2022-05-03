@@ -8,7 +8,7 @@
 #include <queue>
 
 typedef std::function<void()> task_type;
-typedef void (*FuncType) (std::shared_ptr<std::promise<void>>, int*, int, int, int);
+typedef void (*FuncType) (std::shared_ptr<std::promise<void>>, int*, int, int);
 
 template<class T>
 class BlockedQueue {
@@ -59,7 +59,7 @@ class OptimizeThreadPool {
        // остановка:
        void stop();
        // проброс задач
-       void push_task(FuncType f, std::shared_ptr<std::promise<void>> spPromise, int *arr, int l, int m, int r);
+       void push_task(FuncType f, std::shared_ptr<std::promise<void>> spPromise, int *array, int left_bound, int right);
        // функция входа для потока
        void threadFunc(int qindex);
    private:
@@ -78,7 +78,7 @@ class RequestHandler {
        RequestHandler();
        ~RequestHandler();
        // отправка запроса на выполнение
-       void pushRequest(FuncType f, std::shared_ptr<std::promise<void>> spPromise, int *arr, int l, int m, int r);
+       void pushRequest(FuncType f, std::shared_ptr<std::promise<void>> spPromise, int*, int left_bound, int right);
    private:
        // пул потоков
        OptimizeThreadPool m_tpool;
